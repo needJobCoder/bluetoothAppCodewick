@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   NativeModules,
   Alert,
+  FlatList,
+  StyleSheet,
 } from 'react-native';
 import BleManager, {
   BleDisconnectPeripheralEvent,
@@ -17,13 +19,14 @@ import BleManager, {
   BleScanMode,
   Peripheral,
 } from 'react-native-ble-manager';
-import { NativeAppEventEmitter } from 'react-native'
-
+import {NativeAppEventEmitter} from 'react-native';
 
 import BluetoothStateManager from 'react-native-bluetooth-state-manager';
 
 function App() {
-  const [discovereBluetoothDeivces, setDiscoveredBluetoothDevices] = useState<Array>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [discovereBluetoothDeivces, setDiscoveredBluetoothDevices] =
+    useState<Array>([{id: '69:69:69'}, {id: '78:47:24'}, {id: '78:47:24'}, {id: '78:47:24'}, {id: '78:47:24'}, {id: '78:47:24'}]);
   const [bluetoothPermissionGranted, setBluetoothPermissionGranted] =
     useState(false);
   const [bleStarted, setBleStarted] = useState(false);
@@ -101,43 +104,95 @@ function App() {
   };
 
   const scanForDevices = () => {
-    console.log("bleStarted " + bleStarted);
+    console.log('bleStarted ' + bleStarted);
     if (bleStarted) {
-
-    BleManager.start({showAlert: true});
-    BleManager.enableBluetooth().then(()=>{
-      console.log("BluetoothEnabled");
-      
-    })
-    BleManager.scan([], 180, true, JSON).then((results) => {
-        console.log('Scan started');
-        
-            
+      BleManager.start({showAlert: true});
+      BleManager.enableBluetooth().then(() => {
+        console.log('BluetoothEnabled');
+      });
+      BleManager.scan([], 180, true, JSON)
+        .then(results => {
+          console.log('Scan started');
+          setIsScanning(true);
         })
         .catch(error => {
-        console.log(error);
-      })
-    }    
-
-    
+          console.log(error);
+        });
+    }
   };
 
-  const getPeripherals = ()=>{
-    BleManager.getDiscoveredPeripherals([]).then((peripheralsArray) => {
+  const getPeripherals = () => {
+    BleManager.getDiscoveredPeripherals([]).then(peripheralsArray => {
       // Success code
-      console.log("Discovered peripherals: " + peripheralsArray);
-      peripheralsArray.map((value, idx)=>{
+      console.log('Discovered peripherals: ' + peripheralsArray);
+      setDiscoveredBluetoothDevices(peripheralsArray);
+      peripheralsArray.map((value, idx) => {
         console.log(value);
-        
-      })
+      });
     });
-  }
-  const stopScanning = ()=>{
+  };
+  const stopScanning = () => {
     BleManager.stopScan().then(() => {
       // Success code
-      console.log("Scan stopped");
+      console.log('Scan stopped');
+      setIsScanning(false);
     });
-  }
+  };
+
+  // eslint-disable-next-line react/no-unstable-nested-components
+  const ReturnDiscoveredDevices = () => {
+    if (discovereBluetoothDeivces.length < 1) {
+      return (
+        <TouchableOpacity>
+          <Text>Please Start Scanning </Text>
+        </TouchableOpacity>
+      );
+    } else if (discovereBluetoothDeivces.length >= 1) {
+      const renderItem = ({item}) => {
+        return (
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              margin: 4,
+              padding: 2,
+              height: 80,
+            }}>
+            <TouchableOpacity style={{width: '40%'}}>
+              <Text>{item.id}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{width: '60%', textAlign: 'center'}}>
+              <Text style={{...styles.buttonText, height:40}}>Connect</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      };
+
+      return (
+        <FlatList
+          style={{borderColor: 'black',  width: '100%'}}
+          data={discovereBluetoothDeivces}
+          renderItem={renderItem}
+        />
+      );
+    }
+  };
+
+  const RenderScanningStatus = () => {
+    if (isScanning) {
+      return (
+        <TouchableOpacity>
+          <Text>Scanning</Text>
+        </TouchableOpacity>
+      );
+    } else {
+      return (
+        <TouchableOpacity>
+          <Text>Not Scanning</Text>
+        </TouchableOpacity>
+      );
+    }
+  };
 
   const dynamicallyCheckBluetoothState = () => {
     BluetoothStateManager.onStateChange(bluetoothState => {
@@ -160,35 +215,57 @@ function App() {
   const RenderApp = () => {
     if (checkIfBluetoothIsTurnedOn) {
       return (
-        <View
-          style={{
-            flex: 1,
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <TouchableOpacity
-            onPress={async () => {
-              const ifPermission = await getPermission();
-              console.log(ifPermission);
+        <View style={{justifyContent: 'center', alignContent: 'center'}}>
+          <View
+            style={{
+              height: '50%',
+              justifyContent: 'center',
+              alignItems: 'center',
+              margin: 10,
             }}>
-            <Text style={{color: 'blue'}}>Get Permissions</Text>
-          </TouchableOpacity>
-          <ReturnPermissionAccquired />
-          <TouchableOpacity onPress={()=>{
-            scanForDevices();
-          }}>
-          <Text style={{color:'red'}} >Scan</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={{width:'100%', alignContent:'center', justifyContent:'center'}}
+              onPress={async () => {
+                const ifPermission = await getPermission();
+                console.log(ifPermission);
+              }}>
+                
 
-          <TouchableOpacity style={{color:'red'}} onPress={()=>{stopScanning()}}>
-            <Text>StopScan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={()=>{
-            getPeripherals();
-          }} >
-            <Text style={{color: 'red'}}>getPeripherals</Text>
-          </TouchableOpacity>
+              <Text style={{color: 'blue', ...styles.buttonText,marginHorizontal:'auto', height:50}}>Get Permissions</Text>
+            </TouchableOpacity>
+            <ReturnPermissionAccquired />
+            <View style={{flexDirection:'row'}}>
+            
+            <TouchableOpacity
+              onPress={() => {
+                scanForDevices();
+              }}>
+              <Text style={{color: 'red', ...styles.buttonTextWithMargin}}>Scan</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{color: 'red'}}
+              onPress={() => {
+                stopScanning();
+              }}>
+              <Text style={styles.buttonTextWithMargin}>StopScan</Text>
+            </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                getPeripherals();
+              }}>
+              <Text style={{color: 'red'}} >getPeripherals</Text>
+            </TouchableOpacity>
+            <RenderScanningStatus />
+          </View>
+          <View
+            style={{
+              overflow: 'scroll',
+              height: '40%',
+              alignContent: 'center',
+            }}>
+            <ReturnDiscoveredDevices />
+          </View>
         </View>
       );
     } else {
@@ -209,5 +286,27 @@ function App() {
 
   return <RenderApp />;
 }
+
+const styles = StyleSheet.create({
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    backgroundColor: 'blue',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
+  buttonTextWithMargin: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    backgroundColor: 'blue',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    margin:4,
+    height:40,
+    width:120,
+  },
+});
 
 export default App;
