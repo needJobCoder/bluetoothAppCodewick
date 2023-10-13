@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   NativeModules,
+  Alert,
 } from 'react-native';
 import BleManager, {
   BleDisconnectPeripheralEvent,
@@ -17,11 +18,14 @@ import BleManager, {
   Peripheral,
 } from 'react-native-ble-manager';
 
+import BluetoothStateManager from 'react-native-bluetooth-state-manager';
+
 function App() {
   const [bluetoothPermissionGranted, setBluetoothPermissionGranted] =
     useState(false);
   const [bleStarted, setBleStarted] = useState(false);
-  const [checkIfBluetoothIsTurnedOn, setCheckIfBluetoothIsTurnedOn] = useState(false);
+  const [checkIfBluetoothIsTurnedOn, setCheckIfBluetoothIsTurnedOn] =
+    useState(false);
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -59,7 +63,7 @@ function App() {
   const getPermission = async () => {
     if (Platform.OS === 'android') {
       const bluetoothPermission: boolean = await requestAndroid31Permissions();
-      if (bluetoothPermission) {
+      if (bluetoothPermission && checkIfBluetoothIsTurnedOn) {
         console.log('bluetoothPermissionAccquired');
         setBluetoothPermissionGranted(true);
         startBleManager(bluetoothPermission);
@@ -94,35 +98,84 @@ function App() {
   };
 
   const scanForDevices = () => {
+    console.log("bleStarted " + bleStarted);
     if (bleStarted) {
-      BleManager.scan([], 5, true).then(() => {
-        // Success code
+      BleManager.enableBluetooth().then(()=>{
+        console.log("blueToothEnabled");
+        
+      })
+
+    BleManager.scan([], 60, true, JSON).then((results) => {
         console.log('Scan started');
-      });
+        console.log("scanResults " +  results);
+        
+        })
+        .catch(error => {
+        console.log(error);
+      })
     }
   };
+
+  const dynamicallyCheckBluetoothState = () => {
+    BluetoothStateManager.onStateChange(bluetoothState => {
+      if (bluetoothState === 'PoweredOn') {
+        setCheckIfBluetoothIsTurnedOn(true);
+        console.log('checkIfBluetoothIsTurnedOn ' + checkIfBluetoothIsTurnedOn);
+      } else {
+        setCheckIfBluetoothIsTurnedOn(false);
+        console.log('checkIfBluetoothIsTurnedOn ' + checkIfBluetoothIsTurnedOn);
+      }
+    }, true /*=emitCurrentState*/);
+  };
+
   useEffect(() => {
     console.log('bluetoothPermissionGranted' + bluetoothPermissionGranted);
-    
-  }, [bluetoothPermissionGranted]);
+    dynamicallyCheckBluetoothState();
+  }, []);
 
-  return (
-    <View
-      style={{
-        flex: 1,
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-      <TouchableOpacity
-        onPress={async () => {
-          console.log(await getPermission());
-        }}>
-        <Text style={{color: 'blue'}}>Connect To Bluetooth</Text>
-      </TouchableOpacity>
-      <ReturnPermissionAccquired />
-    </View>
-  );
+  // eslint-disable-next-line react/no-unstable-nested-components
+  const RenderApp = () => {
+    if (checkIfBluetoothIsTurnedOn) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <TouchableOpacity
+            onPress={async () => {
+              const ifPermission = await getPermission();
+              console.log(ifPermission);
+            }}>
+            <Text style={{color: 'blue'}}>Get Permissions</Text>
+          </TouchableOpacity>
+          <ReturnPermissionAccquired />
+          <TouchableOpacity onPress={()=>{
+            scanForDevices();
+          }}>
+          <Text style={{color:'red'}} >Scan</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    } else {
+      return (
+        <View
+          // eslint-disable-next-line react-native/no-inline-styles
+          style={{
+            flex: 1,
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Text>TurnOnBluetooth</Text>
+        </View>
+      );
+    }
+  };
+
+  return <RenderApp />;
 }
 
 export default App;
