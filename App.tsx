@@ -17,10 +17,13 @@ import BleManager, {
   BleScanMode,
   Peripheral,
 } from 'react-native-ble-manager';
+import { NativeAppEventEmitter } from 'react-native'
+
 
 import BluetoothStateManager from 'react-native-bluetooth-state-manager';
 
 function App() {
+  const [discovereBluetoothDeivces, setDiscoveredBluetoothDevices] = useState<Array>([]);
   const [bluetoothPermissionGranted, setBluetoothPermissionGranted] =
     useState(false);
   const [bleStarted, setBleStarted] = useState(false);
@@ -100,21 +103,41 @@ function App() {
   const scanForDevices = () => {
     console.log("bleStarted " + bleStarted);
     if (bleStarted) {
-      BleManager.enableBluetooth().then(()=>{
-        console.log("blueToothEnabled");
-        
-      })
 
-    BleManager.scan([], 60, true, JSON).then((results) => {
+    BleManager.start({showAlert: true});
+    BleManager.enableBluetooth().then(()=>{
+      console.log("BluetoothEnabled");
+      
+    })
+    BleManager.scan([], 180, true, JSON).then((results) => {
         console.log('Scan started');
-        console.log("scanResults " +  results);
         
+            
         })
         .catch(error => {
         console.log(error);
       })
-    }
+    }    
+
+    
   };
+
+  const getPeripherals = ()=>{
+    BleManager.getDiscoveredPeripherals([]).then((peripheralsArray) => {
+      // Success code
+      console.log("Discovered peripherals: " + peripheralsArray);
+      peripheralsArray.map((value, idx)=>{
+        console.log(value);
+        
+      })
+    });
+  }
+  const stopScanning = ()=>{
+    BleManager.stopScan().then(() => {
+      // Success code
+      console.log("Scan stopped");
+    });
+  }
 
   const dynamicallyCheckBluetoothState = () => {
     BluetoothStateManager.onStateChange(bluetoothState => {
@@ -156,6 +179,15 @@ function App() {
             scanForDevices();
           }}>
           <Text style={{color:'red'}} >Scan</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={{color:'red'}} onPress={()=>{stopScanning()}}>
+            <Text>StopScan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={()=>{
+            getPeripherals();
+          }} >
+            <Text style={{color: 'red'}}>getPeripherals</Text>
           </TouchableOpacity>
         </View>
       );
