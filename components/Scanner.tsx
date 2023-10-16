@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -110,7 +111,7 @@ function Scanner() {
       BleManager.enableBluetooth().then(() => {
         console.log('BluetoothEnabled');
       });
-      BleManager.scan([], 180, true, JSON)
+      BleManager.scan([], 15, true)
         .then(results => {
           console.log('Scan started');
           setIsScanning(true);
@@ -146,12 +147,18 @@ function Scanner() {
       const [isConnected, setIsConnected] = useState(false);
       if (isConnected) {
         return (
+          <View  style={{width:'100%', flexDirection:'row'}}>
+
           <TouchableOpacity
-            style={{ width: '60%', textAlign: 'center' }}
+            style={{ width: '30%', textAlign: 'center', margin:1 }}
             onPress={() => {
               console.log(isConnected);
-              console.log(item.id);
-              
+
+
+              console.log(item.id + " connected");
+              console.log(item.name + " connected");
+
+
               BleManager.disconnect(item.id)
                 .then(() => {
                   // Success code
@@ -164,33 +171,70 @@ function Scanner() {
                 })
 
             }}>
-            <Text style={{ ...styles.buttonText, height: 40, }}>Disconnect</Text>
+            <Text style={{ ...styles.buttonText, height: 40}}>Disconnect</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={{ width: '30%', textAlign: 'center', margin:1 }} >
+            <Text style={{ ...styles.buttonText, height: 40, backgroundColor: 'green', margin:2 }} onPress={()=>{
+              console.log("checkConnectionPressed");
+
+              if(typeof item.id === 'undefined')
+              {
+                console.log("checkConnectionFailed, item.id === ", item.id);
+              }
+              try{
+                BleManager.retrieveServices(`${item.id}`).then(
+                  (peripheralInfo) => {
+                    // Success code
+                    console.log("Peripheral info:", peripheralInfo);
+                  }
+                ).catch((error)=>{
+                  console.log(error);
+                  
+                })
+              }catch(error)
+              {
+                console.log(error);
+                
+              }
+
+            }}>CheckConnection</Text>
+          </TouchableOpacity>
+          </View>
         );
       } else if (!isConnected) {
         return (
+          <View style={{width:'100%', flexDirection:'row'}}>
           <TouchableOpacity
-            style={{ width: '60%', textAlign: 'center' }}
+            style={{ width: '30%', textAlign: 'center', margin:2 }}
             onPress={() => {
               console.log(isConnected);
               console.log(item.id);
-              
+              console.log(item.name);
+
+             
 
 
-              BleManager.connect(item.id)
-                .then(() => {
-                  // Success code
-                  console.log('Connected');
                   setIsConnected(true);
-                })
-                .catch(error => {
-                  // Failure code
-                  console.log(error);
-                });
-              ;
+                 
+
             }}>
             <Text style={{ ...styles.buttonText, height: 40, backgroundColor: 'green' }}>Connect</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={{ width: '30%', textAlign: 'center', margin:1 }}>
+            <Text style={{ ...styles.buttonText, height: 40, backgroundColor: 'green' }} onPress={()=>{
+              if(typeof item.id === 'undefined')
+              {
+                console.log("checkConnectionFailed");
+              }
+              BleManager.retrieveServices(item.id).then(
+                (peripheralInfo) => {
+                  // Success code
+                  console.log("Peripheral info:", peripheralInfo);
+                }
+              );
+            }}>CheckConnection</Text>
+          </TouchableOpacity>
+          </View>
         )
       }
     };
@@ -258,6 +302,16 @@ function Scanner() {
     }, true /*=emitCurrentState*/);
   };
 
+  const returnConnectedPeripherals = ()=>{
+    BleManager.getConnectedPeripherals([]).then((peripheralsArray) => {
+      // Success code
+      console.log("Connected peripherals: " + peripheralsArray);
+      peripheralsArray.map((val, idx)=>{
+        console.log(val);
+      })
+    });
+  }
+
   useEffect(() => {
     console.log('bluetoothPermissionGranted' + bluetoothPermissionGranted);
     dynamicallyCheckBluetoothState();
@@ -321,7 +375,11 @@ function Scanner() {
               <Text style={{ color: 'red' , ...styles.buttonTextWithMargin}}>getPeripherals</Text>
             </TouchableOpacity>
             <RenderScanningStatus />
+            <Text onPress={()=>{
+              returnConnectedPeripherals();
+            }}>Get Connected Peripherals</Text>
           </View>
+
           <View
             style={{
               overflow: 'scroll',
