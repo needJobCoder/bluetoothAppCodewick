@@ -24,6 +24,40 @@ import { NativeAppEventEmitter } from 'react-native';
 
 import BluetoothStateManager from 'react-native-bluetooth-state-manager';
 
+
+export const requestAndroid31Permissions = async () => {
+  const bluetoothScanPermission = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+    {
+      title: 'Location Permission',
+      message: 'Bluetooth Low Energy requires Location',
+      buttonPositive: 'OK',
+    },
+  );
+  const bluetoothConnectPermission = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+    {
+      title: 'Location Permission',
+      message: 'Bluetooth Low Energy requires Location',
+      buttonPositive: 'OK',
+    },
+  );
+  const fineLocationPermission = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    {
+      title: 'Location Permission',
+      message: 'Bluetooth Low Energy requires Location',
+      buttonPositive: 'OK',
+    },
+  );
+
+  return (
+    bluetoothScanPermission === 'granted' &&
+    bluetoothConnectPermission === 'granted' &&
+    fineLocationPermission === 'granted'
+  );
+};
+
 function Scanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [discovereBluetoothDeivces, setDiscoveredBluetoothDevices] =
@@ -34,38 +68,7 @@ function Scanner() {
   const [checkIfBluetoothIsTurnedOn, setCheckIfBluetoothIsTurnedOn] =
     useState(false);
 
-  const requestAndroid31Permissions = async () => {
-    const bluetoothScanPermission = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-      {
-        title: 'Location Permission',
-        message: 'Bluetooth Low Energy requires Location',
-        buttonPositive: 'OK',
-      },
-    );
-    const bluetoothConnectPermission = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-      {
-        title: 'Location Permission',
-        message: 'Bluetooth Low Energy requires Location',
-        buttonPositive: 'OK',
-      },
-    );
-    const fineLocationPermission = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      {
-        title: 'Location Permission',
-        message: 'Bluetooth Low Energy requires Location',
-        buttonPositive: 'OK',
-      },
-    );
-
-    return (
-      bluetoothScanPermission === 'granted' &&
-      bluetoothConnectPermission === 'granted' &&
-      fineLocationPermission === 'granted'
-    );
-  };
+   
 
   const getPermission = async () => {
     if (Platform.OS === 'android') {
@@ -83,9 +86,9 @@ function Scanner() {
   };
   const ReturnPermissionAccquired = () => {
     if (bluetoothPermissionGranted) {
-      return <Text>bluetoothPermissionGranted</Text>;
+      return <Text style={{...styles.textColor}}>bluetoothPermissionGranted</Text>;
     } else if (!bluetoothPermissionGranted) {
-      return <Text>!bluetoothPermissionGranted</Text>;
+      return <Text style={{...styles.textColor}}>!bluetoothPermissionGranted</Text>;
     }
   };
 
@@ -123,6 +126,7 @@ function Scanner() {
   };
 
   const getPeripherals = () => {
+
     BleManager.getDiscoveredPeripherals([]).then(peripheralsArray => {
       // Success code
       console.log('Discovered peripherals: ' + peripheralsArray);
@@ -242,7 +246,7 @@ function Scanner() {
     if (discovereBluetoothDeivces.length < 1) {
       return (
         <TouchableOpacity>
-          <Text>Please Start Scanning </Text>
+          <Text style={{...styles.textColor}} >Please Start Scanning </Text>
         </TouchableOpacity>
       );
     } else if (discovereBluetoothDeivces.length >= 1) {
@@ -257,7 +261,7 @@ function Scanner() {
               height: 80,
             }}>
             <TouchableOpacity style={{ width: '40%' }}>
-              <Text>{item.id}</Text>
+              <Text style={{...styles.textColor}}>{item.id}</Text>
             </TouchableOpacity>
             <RenderConnectOrDisconnect item={item} />
           </View>
@@ -278,13 +282,13 @@ function Scanner() {
     if (isScanning) {
       return (
         <TouchableOpacity>
-          <Text>Scanning ! Please wait a moment. It takes time</Text>
+          <Text style={{...styles.textColor}}>Scanning ! Please wait a moment. It takes time</Text>
         </TouchableOpacity>
       );
     } else {
       return (
         <TouchableOpacity>
-          <Text>Not Scanning</Text>
+          <Text style={{...styles.textColor}}>Not Scanning</Text>
         </TouchableOpacity>
       );
     }
@@ -375,7 +379,7 @@ function Scanner() {
               <Text style={{ color: 'red' , ...styles.buttonTextWithMargin}}>getPeripherals</Text>
             </TouchableOpacity>
             <RenderScanningStatus />
-            <Text onPress={()=>{
+            <Text  style={{...styles.textColor}} onPress={()=>{
               returnConnectedPeripherals();
             }}>Get Connected Peripherals</Text>
           </View>
@@ -400,16 +404,18 @@ function Scanner() {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <Text>TurnOnBluetooth</Text>
+          <Text  style={{...styles.textColor}}>TurnOnBluetooth</Text>
         </View>
       );
     }
   };
 
+ 
+
   return <RenderApp />;
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
@@ -429,6 +435,9 @@ const styles = StyleSheet.create({
     height: 40,
     width: 120,
   },
+  textColor:{
+    color:'black'
+  }
 });
 
 export default Scanner;
